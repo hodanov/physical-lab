@@ -39,5 +39,5 @@ CAD 正本を変えたら、レビューや製造の前に対応するエクス�
 ## 関連資料
 
 - [リポジトリルール](../../AGENTS.md)
-- [alice-60 の CAD ライフサイクル](../../products/keyboard/alice-60/README.md#cad-artifact-lifecycle)
-- [alice-60 の設計制約](../../products/keyboard/alice-60/AGENTS.md)
+- [TSUGU Split 65 の CAD成果物のライフサイクル](../../products/keyboard/tsugu-65/README.md#cad成果物のライフサイクル)
+- [TSUGU Split 65 の設計制約](../../products/keyboard/tsugu-65/AGENTS.md)
