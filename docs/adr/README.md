@@ -42,4 +42,5 @@ ADR を `置換` にして新旧の ADR から相互にリンクする。判断�
 ## リポジトリ ADR
 
 - [ADR-0001: 物理プロダクトのモノレポ構成](0001-physical-product-monorepo.md)
-- [ADR-0002: CAD 正本と製造用エクスポート](0002-cad-source-and-manufacturing-exports.md)
+- [ADR-0002: CAD 正本と製造用エクスポート](0002-cad-source-and-manufacturing-exports.md)（置換）
+- [ADR-0003: コード CAD を正本にし、FreeCAD を図面・解析に使う](0003-code-cad-source-of-truth.md)

@@ -1,6 +1,6 @@
 # ADR-0002: CAD 正本と製造用エクスポート
 
-- 状態: 承認
+- 状態: 置換（[ADR-0003](0003-code-cad-source-of-truth.md)）
 - 日付: 2026-09-22
 
 ## 背景
@@ -38,6 +38,7 @@ CAD 正本を変えたら、レビューや製造の前に対応するエクス�
 
 ## 関連資料
 
+- [ADR-0003: コード CAD を正本にし、FreeCAD を図面・解析に使う](0003-code-cad-source-of-truth.md)
 - [リポジトリルール](../../AGENTS.md)
 - [TSUGU Split 65 の CAD成果物のライフサイクル](../../products/keyboard/tsugu-65/README.md#cad成果物のライフサイクル)
 - [TSUGU Split 65 の設計制約](../../products/keyboard/tsugu-65/AGENTS.md)

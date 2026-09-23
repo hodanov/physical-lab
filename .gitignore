@@ -1,0 +1,10 @@
+# Python
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# Generated CAD exports (see docs/adr/0003-code-cad-source-of-truth.md)
+products/*/*/cad/export/*
+!products/*/*/cad/export/.gitkeep
