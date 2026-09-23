@@ -51,3 +51,24 @@ def test_rejects_scissor_opening_larger_than_pitch() -> None:
 def test_rejects_non_positive_plate_thickness() -> None:
     with pytest.raises(ValueError, match="plate_thickness"):
         Params(plate_thickness=0)
+
+
+def test_rejects_floor_thinner_than_pa12_minimum() -> None:
+    with pytest.raises(ValueError, match="floor_thickness"):
+        Params(floor_thickness=PA12_MIN_WALL - 0.1)
+
+
+def test_rejects_half_height_opening_deeper_than_half_pitch() -> None:
+    with pytest.raises(ValueError, match="half_height_opening_depth"):
+        Params(key_pitch=19.05, half_height_opening_depth=19.05 / 2)
+
+
+@pytest.mark.parametrize("name", ["usb_c_opening_height", "link_opening_height"])
+def test_rejects_side_opening_taller_than_interior(name: str) -> None:
+    with pytest.raises(ValueError, match=name):
+        Params(interior_depth=5.0, **{name: 5.1})
+
+
+def test_rejects_negative_plate_clearance() -> None:
+    with pytest.raises(ValueError, match="plate_clearance"):
+        Params(plate_clearance=-0.1)
