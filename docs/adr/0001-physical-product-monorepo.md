@@ -18,7 +18,7 @@
 - 共通の開発・製造ユーティリティは `tools/` に置く。
 - リポジトリ全体の文書は `docs/` に置く。
 
-最初のプロダクトは `products/keyboard/alice-60/` とする。各プロダクトは CAD、図面、
+最初のプロダクトは `products/keyboard/tsugu-65/` とする。各プロダクトは CAD、図面、
 PCB、ファームウェア、BOM、製造記録、プロダクト固有の ADR を所有する。
 
 ## 検討した選択肢
@@ -39,5 +39,5 @@ PCB、ファームウェア、BOM、製造記録、プロダクト固有の ADR 
 ## 関連資料
 
 - [リポジトリルール](../../AGENTS.md)
-- [alice-60 の概要](../../products/keyboard/alice-60/README.md)
+- [TSUGU Split 65 の概要](../../products/keyboard/tsugu-65/README.md)
 - [ADR-0002: CAD 正本と製造用エクスポート](0002-cad-source-and-manufacturing-exports.md)
