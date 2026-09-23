@@ -37,7 +37,7 @@ Each product should keep:
 ## Python tooling
 
 - Manage dependencies with uv (`pyproject.toml`, `uv.lock`). Python is pinned
-  to 3.11.
+  to 3.14.
 - Format and lint with ruff, type-check with mypy (strict), test with pytest.
 - Before finishing a change, run:
 

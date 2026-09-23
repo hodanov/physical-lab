@@ -20,7 +20,7 @@ CI で動かすには AppImage などの重いセットアップが要る。
 - モデリングには build123d（OpenCASCADE ベース）を使う。プロダクトのパラメータと
   モデリングスクリプトを `cad/source/` に置き、これを設計正本とする。
 - Python の依存はルートの `pyproject.toml` と `uv.lock` で uv により管理する。
-  Python は 3.11 に固定する。
+  Python は 3.14 に固定する。
 - ビルドスクリプトで STEP（中立形式の製造マスター）、STL（3Dプリント用）、確認用
   SVG、検査レポートを `cad/export/` に生成する。生成物はコミットせず、CI の
   artifact として取得する。
