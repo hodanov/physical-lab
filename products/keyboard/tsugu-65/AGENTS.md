@@ -30,6 +30,8 @@ low-profile split keyboard.
 - USB-C host connection and Bluetooth multi-pairing for three hosts
 - Wire the two halves together for inter-half data and power; the left half is
   the main unit and owns USB-C, Bluetooth, battery, antenna, and host switching
+- Place the USB-C host port on the outer (left) side face of the left half,
+  toward the back edge
 - Keep the default typing angle between 0 and 3 degrees; do not make tenting a
   first-prototype requirement
 - Use a non-metal enclosure by default to preserve Bluetooth performance
