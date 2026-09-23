@@ -6,8 +6,8 @@ MacBook Airとの行き来で迷わない配列と打鍵感を目指す、薄型
 
 ## Status
 
-要件とプロジェクト構成を確定済み。CAD、電子回路、ファームウェア、製造物は
-未作成。
+要件とプロジェクト構成を確定済み。コードCAD（build123d）のツール基盤とCIを
+整備済みで、形状はまだない。電子回路、ファームウェア、製造物は未作成。
 
 ## 確定仕様
 
@@ -26,7 +26,7 @@ MacBook Airとの行き来で迷わない配列と打鍵感を目指す、薄型
   アンテナ、ホスト切替を担当する。右半分には左右間ケーブルで給電・通信する。
   USB-Cポートは左半分の外側（左）側面の奥寄りに置く
 - 筐体: 軽量な非金属を基本とし、標準姿勢は0〜3度の低い傾斜にする
-- CAD: FreeCAD。単位はミリメートル
+- CAD: build123dでモデリングし、FreeCADで図面・解析を行う。単位はミリメートル
 - 試作筐体: DMM.makeのPA12を候補とする
 
 ## 物理レイアウト
@@ -54,9 +54,9 @@ globe ctrl option command space-L | space-R command option left down up fn right
 
 ## ディレクトリ構成
 
-- `cad/source/`: editable FreeCAD source files (`.FCStd`)
-- `cad/export/`: generated STEP and STL manufacturing exports
-- `drawings/`: dimensioned drawings and related documentation
+- `cad/source/`: code-CAD source of truth (`tsugu65/`) and tests (`tests/`)
+- `cad/export/`: generated STEP, STL, SVG, and inspection report (not committed)
+- `drawings/`: FreeCAD TechDraw sources and dimensioned drawings
 - `pcb/`: PCB design files
 - `firmware/`: keyboard firmware
 - `bom/`: bill of materials
@@ -64,6 +64,16 @@ globe ctrl option command space-L | space-R command option left down up fn right
 
 ## CAD成果物のライフサイクル
 
-`cad/source/` を設計の正本とする。CADモデルを変更したら `cad/export/` のSTEPと
-STLを再生成する。発注前には、選択した材料と製造サービスの最新ガイドラインに
-照らして出力を検証する。
+`cad/source/` のPythonスクリプトとパラメータを設計の正本とする
+（[ADR-0003](../../../docs/adr/0003-code-cad-source-of-truth.md)）。
+`cad/export/` の生成物はコミットせず、CIのartifactとして取得する。
+
+```sh
+uv sync                 # 依存をインストール
+uv run tsugu65-build    # cad/export/ に生成物を出力
+uv run pytest           # テスト
+```
+
+FreeCADの図面は、生成したSTEPを取り込んでレビューや発注の節目で更新する。
+発注時は使用した生成物を `manufacturing/<service>/<rev>/` にコピーしてコミットする。
+発注前には、選択した材料と製造サービスの最新ガイドラインに照らして出力を検証する。
