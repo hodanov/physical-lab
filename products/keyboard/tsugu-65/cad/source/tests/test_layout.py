@@ -4,7 +4,7 @@ import itertools
 
 import pytest
 
-from tsugu65.layout import KEYS, Half, Key, extent, keys_in, place
+from tsugu65.layout import KEYS, Half, Key, extent, keys_in, place, row_spans
 from tsugu65.params import Params
 
 
@@ -107,3 +107,21 @@ def test_extent_of_each_half() -> None:
 
     assert extent(Half.LEFT, params) == pytest.approx((7.25 * 19.0, 5 * 19.0))
     assert extent(Half.RIGHT, params) == pytest.approx((8.5 * 19.0, 5 * 19.0))
+
+
+def test_place_marks_half_height_keys() -> None:
+    placed = {p.name: p for p in place(Half.RIGHT, Params())}
+
+    assert all(placed[name].half_height for name in ("left", "up", "down", "fn", "right"))
+    assert not placed["roption"].half_height
+
+
+def test_row_spans_follow_row_stagger() -> None:
+    pitch = 19.0
+    spans = row_spans(Half.LEFT, Params(key_pitch=pitch))
+
+    # Number row (back) spans 7u; the shift row (second from front) spans 7.25u.
+    assert spans[0] == pytest.approx((0, 4 * pitch, 7 * pitch, 5 * pitch))
+    assert spans[3] == pytest.approx((0, pitch, 7.25 * pitch, 2 * pitch))
+    # The right half's rows start at their stagger offset from the local origin.
+    assert row_spans(Half.RIGHT, Params(key_pitch=pitch))[0][0] == pytest.approx(0.5 * pitch)

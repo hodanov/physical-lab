@@ -54,6 +54,7 @@ class PlacedKey:
     center_y: float
     cap_width: float
     cap_depth: float
+    half_height: bool
 
 
 def _keys(*names: str) -> list[_Slot]:
@@ -136,9 +137,30 @@ def place(half: Half, params: Params) -> tuple[PlacedKey, ...]:
             center_y=(key.y_u + key.height_u / 2) * pitch,
             cap_width=params.keycap_size(key.width_u),
             cap_depth=params.keycap_size(key.height_u),
+            half_height=key.height_u < 1,
         )
         for key in keys
     )
+
+
+def row_spans(half: Half, params: Params) -> tuple[tuple[float, float, float, float], ...]:
+    """Return each row's key area as (x_min, y_min, x_max, y_max) in the local frame."""
+    keys = keys_in(half)
+    origin_u = _origin_u(keys)
+    pitch = params.key_pitch
+    spans = []
+    for row in range(ROW_COUNT):
+        row_keys = [key for key in keys if key.row == row]
+        y_min = (ROW_COUNT - 1 - row) * pitch
+        spans.append(
+            (
+                (min(key.x_u for key in row_keys) - origin_u) * pitch,
+                y_min,
+                (max(key.x_u + key.width_u for key in row_keys) - origin_u) * pitch,
+                y_min + pitch,
+            )
+        )
+    return tuple(spans)
 
 
 def extent(half: Half, params: Params) -> tuple[float, float]:
