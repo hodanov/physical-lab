@@ -39,6 +39,8 @@ Each product should keep:
 - Manage dependencies with uv (`pyproject.toml`, `uv.lock`). Python is pinned
   to 3.14.
 - Format and lint with ruff, type-check with mypy (strict), test with pytest.
+- Follow the design and comment rules in `.claude/rules/python-code-design.md`
+  and `.claude/rules/python-code-comments.md` for code you write or change.
 - Before finishing a change, run:
 
   ```sh
