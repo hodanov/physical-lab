@@ -30,7 +30,7 @@ def build_half(half: Half, params: Params) -> HalfModel:
         params.plate_thickness
         + params.interior_depth
         + params.floor_thickness
-        + (key_depth + 2 * (params.plate_clearance + params.wall_thickness)) * math.sin(tilt)
+        + (key_depth + 2 * params.case_outer_offset) * math.sin(tilt)
         + 10
     )
 

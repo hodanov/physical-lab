@@ -60,15 +60,21 @@ def _build_report(models: Sequence[HalfModel], params: Params) -> dict[str, Any]
     }
 
 
-def _write_svg(shape: Compound, view: str, outer_side: float, path: Path) -> None:
+def _view_orientations(half: Half) -> dict[str, tuple[Vector, Vector]]:
+    outer_side = -1.0 if half is Half.LEFT else 1.0
+    return {
+        "top": (Vector(0, 0, 1), Vector(0, 1, 0)),
+        "front": (Vector(0, -1, 0), Vector(0, 0, 1)),
+        "side": (Vector(outer_side, 0, 0), Vector(0, 0, 1)),
+    }
+
+
+def _write_svg(shape: Compound, direction: Vector, up: Vector, path: Path) -> None:
     camera_distance = 1000.0
     center = shape.bounding_box().center()
-    origin, up = {
-        "top": (center + Vector(0, 0, camera_distance), (0, 1, 0)),
-        "front": (center + Vector(0, -camera_distance, 0), (0, 0, 1)),
-        "side": (center + Vector(outer_side * camera_distance, 0, 0), (0, 0, 1)),
-    }[view]
-    visible, hidden = shape.project_to_viewport(origin, up, look_at=center)
+    visible, hidden = shape.project_to_viewport(
+        center + direction * camera_distance, up, look_at=center
+    )
 
     exporter = ExportSVG(margin=5)
     exporter.add_layer("visible")
@@ -90,9 +96,8 @@ def _export_half(model: HalfModel, params: Params, out_dir: Path) -> None:
     flat_plate = Pos(0, 0, params.plate_thickness) * plate.plate(HalfLayout(model.half, params))
     export_stl(flat_plate, out_dir / f"{stem}-plate.stl")
 
-    outer_side = -1.0 if model.half is Half.LEFT else 1.0
-    for view in ("top", "front", "side"):
-        _write_svg(assembly, view, outer_side, out_dir / f"{stem}-{view}.svg")
+    for view, (direction, up) in _view_orientations(model.half).items():
+        _write_svg(assembly, direction, up, out_dir / f"{stem}-{view}.svg")
 
 
 def main(argv: Sequence[str] | None = None) -> int:

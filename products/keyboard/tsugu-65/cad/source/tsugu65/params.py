@@ -98,3 +98,8 @@ class Params:
     def keycap_size(self, units: float) -> float:
         """Return the keycap length for a key slot spanning ``units`` key pitches."""
         return units * self.key_pitch - self.keycap_gap
+
+    @property
+    def case_outer_offset(self) -> float:
+        """Return the distance from the key-area outline to the case's outer surface."""
+        return self.plate_clearance + self.wall_thickness

@@ -29,7 +29,7 @@ def _usb_c_opening(layout: HalfLayout) -> Part:
     """Cut through the outer (left) wall of the left half, toward the back."""
     params = layout.params
     _, key_depth = layout.extent()
-    x_min = -(params.plate_clearance + params.wall_thickness) - _OVERCUT
+    x_min = -params.case_outer_offset - _OVERCUT
     x_max = params.plate_ledge + _OVERCUT
     return Pos(
         (x_min + x_max) / 2, key_depth - params.usb_c_offset_from_back, _opening_z(params)
@@ -47,7 +47,7 @@ def _link_opening(layout: HalfLayout) -> Part:
         else x_min + params.link_opening_inset
     )
     y_min = key_depth - params.plate_ledge - _OVERCUT
-    y_max = key_depth + params.plate_clearance + params.wall_thickness + _OVERCUT
+    y_max = key_depth + params.case_outer_offset + _OVERCUT
     return Pos(x, (y_min + y_max) / 2, _opening_z(params)) * Box(
         params.link_opening_width, y_max - y_min, params.link_opening_height
     )
@@ -57,9 +57,7 @@ def case_blank(layout: HalfLayout, depth: float) -> Part:
     """Return the case with its pocket, cavity, and openings, ``depth`` deep."""
     params = layout.params
     outline = plate.outline(layout)
-    outer = extrude(
-        offset(outline, params.plate_clearance + params.wall_thickness, kind=Kind.ARC), -depth
-    )
+    outer = extrude(offset(outline, params.case_outer_offset, kind=Kind.ARC), -depth)
     pocket = extrude(
         offset(outline, params.plate_clearance, kind=Kind.ARC), -params.plate_thickness
     )
