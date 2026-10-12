@@ -1,9 +1,10 @@
 """Tests for the generated plate and case geometry."""
 
+import math
 from functools import cache
 
 import pytest
-from build123d import Axis, Face, Part, SortBy, Vector
+from build123d import Axis, Face, Part, Pos, SortBy, Vector
 
 from tsugu65.assembly import HalfModel, build_half
 from tsugu65.layout import Half, HalfLayout, keys_in
@@ -84,6 +85,20 @@ def test_case_rests_on_z0_with_typing_tilt(half: Half) -> None:
     assert normal.get_angle(Vector(0, 0, 1)) == pytest.approx(3.0)
     # The back edge rises: the normal leans toward the front.
     assert normal.Y < 0
+
+
+@pytest.mark.parametrize("half", list(Half))
+def test_keyboard_to_world_places_plate_top_on_tilted_rim(half: Half) -> None:
+    flat = model(half, FLAT)
+    origin = (flat.keyboard_to_world * Pos(0, 0, 0)).position
+    assert tuple(origin) == pytest.approx((0, 0, top_z(FLAT)))
+
+    tilt_deg = 3.0
+    tilted = model(half, Params(tilt_deg=tilt_deg))
+    _, depth = tilted.layout.extent()
+    front = (tilted.keyboard_to_world * Pos(0, 0, 0)).position
+    back = (tilted.keyboard_to_world * Pos(0, depth, 0)).position
+    assert pytest.approx(depth * math.sin(math.radians(tilt_deg))) == back.Z - front.Z
 
 
 def test_usb_c_opening_is_on_left_side_toward_back() -> None:

@@ -7,7 +7,7 @@ rises, then the case bottom is cut flat at ``z = 0``.
 import math
 from dataclasses import dataclass
 
-from build123d import Keep, Part, Plane, Pos, Rot, split
+from build123d import Keep, Location, Part, Plane, Pos, Rot, split
 
 from tsugu65 import case, plate
 from tsugu65.layout import Half, HalfLayout
@@ -16,9 +16,16 @@ from tsugu65.params import Params
 
 @dataclass(frozen=True, slots=True)
 class HalfModel:
+    """The case and plate of one half in the world frame.
+
+    ``keyboard_to_world`` maps the keyboard frame (see ``tsugu65.plate``) to the world
+    frame, where the case bottom rests on ``z = 0``.
+    """
+
     layout: HalfLayout
     case: Part
     plate: Part
+    keyboard_to_world: Location
 
 
 def build_half(half: Half, params: Params) -> HalfModel:
@@ -42,8 +49,10 @@ def build_half(half: Half, params: Params) -> HalfModel:
 
     to_ground = Pos(0, 0, -bottom_z)
     tilted_case = split(case_blank, Plane.XY.offset(bottom_z), keep=Keep.TOP)
+    keyboard_to_world = to_ground * rotate
     return HalfModel(
         layout=layout,
         case=to_ground * tilted_case,
-        plate=to_ground * (rotate * plate.plate(layout)),
+        plate=keyboard_to_world * plate.plate(layout),
+        keyboard_to_world=keyboard_to_world,
     )
