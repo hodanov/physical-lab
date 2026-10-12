@@ -15,6 +15,9 @@ from tsugu65.params import Params
 
 ROW_COUNT = 5
 
+# Keys at least this wide need a wire stabilizer to keep the keycap level.
+STABILIZER_MIN_WIDTH_U = 2.0
+
 type Level = Literal["full", "top", "bottom"]
 
 
@@ -115,6 +118,10 @@ KEYS: tuple[Key, ...] = _build_keys()
 
 def keys_in(half: Half) -> tuple[Key, ...]:
     return tuple(key for key in KEYS if key.half is half)
+
+
+def stabilized_keys(half: Half) -> tuple[Key, ...]:
+    return tuple(key for key in keys_in(half) if key.width_u >= STABILIZER_MIN_WIDTH_U)
 
 
 def _origin_u(keys: Sequence[Key]) -> float:

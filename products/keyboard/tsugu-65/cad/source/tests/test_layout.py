@@ -4,7 +4,16 @@ import itertools
 
 import pytest
 
-from tsugu65.layout import KEYS, Half, Key, extent, keys_in, place, row_spans
+from tsugu65.layout import (
+    KEYS,
+    Half,
+    Key,
+    extent,
+    keys_in,
+    place,
+    row_spans,
+    stabilized_keys,
+)
 from tsugu65.params import Params
 
 
@@ -125,3 +134,10 @@ def test_row_spans_follow_row_stagger() -> None:
     assert spans[3] == pytest.approx((0, pitch, 7.25 * pitch, 2 * pitch))
     # The right half's rows start at their stagger offset from the local origin.
     assert row_spans(Half.RIGHT, Params(key_pitch=pitch))[0][0] == pytest.approx(0.5 * pitch)
+
+
+def test_keys_of_2u_or_wider_need_stabilizers() -> None:
+    names = {half: {key.name for key in stabilized_keys(half)} for half in Half}
+
+    assert names[Half.LEFT] == {"lshift", "space_l"}
+    assert names[Half.RIGHT] == {"delete", "return", "rshift", "space_r"}

@@ -21,7 +21,12 @@ def outline(half: Half, params: Params) -> Sketch:
 
 
 def openings(half: Half, params: Params) -> Sketch:
-    """Return one scissor opening centered under each keycap."""
+    """Return one scissor opening centered under each keycap.
+
+    TODO(donor): keys from ``stabilized_keys`` also need wire-stabilizer retention
+    features. Add them once the donor's stabilizers are measured; until then these
+    keys get only the 1u center opening.
+    """
     sketch = Sketch()
     for key in place(half, params):
         depth = (
