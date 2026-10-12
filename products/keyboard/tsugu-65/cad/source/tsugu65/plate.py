@@ -13,8 +13,8 @@ def outline(layout: HalfLayout) -> Sketch:
     """Return the stepped key-area outline of the half."""
     min_corner = (Align.MIN, Align.MIN)
     sketch = Sketch()
-    for x_min, y_min, x_max, y_max in layout.row_spans():
-        sketch += Pos(x_min, y_min) * Rectangle(x_max - x_min, y_max - y_min, align=min_corner)
+    for span in layout.row_spans():
+        sketch += Pos(span.x_min, span.y_min) * Rectangle(span.width, span.depth, align=min_corner)
     return sketch.clean()
 
 

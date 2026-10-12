@@ -1,6 +1,7 @@
 """Tests for the physical key layout."""
 
 import itertools
+from dataclasses import astuple
 
 import pytest
 
@@ -9,6 +10,7 @@ from tsugu65.layout import (
     Half,
     HalfLayout,
     Key,
+    Rect,
     keys_in,
     stabilized_keys,
 )
@@ -128,12 +130,35 @@ def test_row_spans_follow_row_stagger() -> None:
     spans = HalfLayout(Half.LEFT, Params(key_pitch=pitch)).row_spans()
 
     # Number row (back) spans 7u; the shift row (second from front) spans 7.25u.
-    assert spans[0] == pytest.approx((0, 4 * pitch, 7 * pitch, 5 * pitch))
-    assert spans[3] == pytest.approx((0, pitch, 7.25 * pitch, 2 * pitch))
+    assert astuple(spans[0]) == pytest.approx((0, 4 * pitch, 7 * pitch, 5 * pitch))
+    assert astuple(spans[3]) == pytest.approx((0, pitch, 7.25 * pitch, 2 * pitch))
     # The right half's rows start at their stagger offset from the local origin.
-    assert HalfLayout(Half.RIGHT, Params(key_pitch=pitch)).row_spans()[0][0] == pytest.approx(
+    assert HalfLayout(Half.RIGHT, Params(key_pitch=pitch)).row_spans()[0].x_min == pytest.approx(
         0.5 * pitch
     )
+
+
+def test_bottom_row_span_covers_full_row_depth_with_half_height_keys() -> None:
+    pitch = 19.0
+    bottom = HalfLayout(Half.RIGHT, Params(key_pitch=pitch)).row_spans()[4]
+
+    assert astuple(bottom) == pytest.approx((0.5 * pitch, 0, 8.5 * pitch, pitch))
+
+
+def test_rect_measures_width_and_depth() -> None:
+    rect = Rect(x_min=1.0, y_min=2.0, x_max=4.0, y_max=7.0)
+
+    assert (rect.width, rect.depth) == pytest.approx((3.0, 5.0))
+
+
+@pytest.mark.parametrize(
+    ("x_min", "y_min", "x_max", "y_max"), [(1.0, 0.0, 0.0, 1.0), (0.0, 1.0, 1.0, 0.0)]
+)
+def test_rect_rejects_min_beyond_max(
+    x_min: float, y_min: float, x_max: float, y_max: float
+) -> None:
+    with pytest.raises(ValueError, match="min must not exceed max"):
+        Rect(x_min=x_min, y_min=y_min, x_max=x_max, y_max=y_max)
 
 
 def test_keys_of_2u_or_wider_need_stabilizers() -> None:

@@ -40,11 +40,11 @@ def _link_opening(layout: HalfLayout) -> Part:
     """Cut through the back wall near the inner end of the number row."""
     params = layout.params
     _, key_depth = layout.extent()
-    x_min, _, x_max, _ = layout.row_spans()[0]
+    number_row = layout.row_spans()[0]
     x = (
-        x_max - params.link_opening_inset
+        number_row.x_max - params.link_opening_inset
         if layout.half is Half.LEFT
-        else x_min + params.link_opening_inset
+        else number_row.x_min + params.link_opening_inset
     )
     y_min = key_depth - params.plate_ledge - _OVERCUT
     y_max = key_depth + params.case_outer_offset + _OVERCUT

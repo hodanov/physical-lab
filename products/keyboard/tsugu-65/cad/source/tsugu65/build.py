@@ -28,7 +28,7 @@ from build123d import (
 
 from tsugu65 import plate
 from tsugu65.assembly import HalfModel, build_half
-from tsugu65.layout import Half, HalfLayout
+from tsugu65.layout import Half
 from tsugu65.params import Params
 
 _PRODUCT = "tsugu65"
@@ -53,7 +53,7 @@ def _build_report(models: Sequence[HalfModel], params: Params) -> dict[str, Any]
         "product": _PRODUCT,
         "params": dataclasses.asdict(params),
         "parts": [
-            _inspect_part(model.half, name, part)
+            _inspect_part(model.layout.half, name, part)
             for model in models
             for name, part in (("case", model.case), ("plate", model.plate))
         ],
@@ -84,8 +84,9 @@ def _write_svg(shape: Compound, direction: Vector, up: Vector, path: Path) -> No
     exporter.write(path)
 
 
-def _export_half(model: HalfModel, params: Params, out_dir: Path) -> None:
-    stem = f"{_PRODUCT}-{model.half.value}"
+def _export_half(model: HalfModel, out_dir: Path) -> None:
+    layout = model.layout
+    stem = f"{_PRODUCT}-{layout.half.value}"
     model.case.label = "case"
     model.plate.label = "plate"
     assembly = Compound(label=stem, children=[model.case, model.plate])
@@ -93,10 +94,10 @@ def _export_half(model: HalfModel, params: Params, out_dir: Path) -> None:
     export_step(assembly, out_dir / f"{stem}.step")
     export_stl(model.case, out_dir / f"{stem}-case.stl")
     # Print the plate flat, bottom face down.
-    flat_plate = Pos(0, 0, params.plate_thickness) * plate.plate(HalfLayout(model.half, params))
+    flat_plate = Pos(0, 0, layout.params.plate_thickness) * plate.plate(layout)
     export_stl(flat_plate, out_dir / f"{stem}-plate.stl")
 
-    for view, (direction, up) in _view_orientations(model.half).items():
+    for view, (direction, up) in _view_orientations(layout.half).items():
         _write_svg(assembly, direction, up, out_dir / f"{stem}-{view}.svg")
 
 
@@ -116,7 +117,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     params = Params()
     models = [build_half(half, params) for half in Half]
     for model in models:
-        _export_half(model, params, out_dir)
+        _export_half(model, out_dir)
 
     report_path = out_dir / "report.json"
     report_path.write_text(
