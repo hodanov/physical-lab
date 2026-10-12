@@ -10,8 +10,6 @@ from dataclasses import dataclass
 # guideline for the chosen process before ordering.
 PA12_MIN_WALL = 1.0
 
-MAX_TILT_DEG = 3.0
-
 
 @dataclass(frozen=True, slots=True)
 class Params:
@@ -56,6 +54,7 @@ class Params:
     def _constraints(self) -> list[tuple[str, bool, str]]:
         """Return (field, satisfied, requirement) for each constraint, in check order."""
         pitch = self.key_pitch
+        max_tilt_deg = 3.0
         constraints = [
             ("key_pitch", pitch > 0, "be positive"),
             (
@@ -69,7 +68,7 @@ class Params:
                 "be within half a key pitch",
             ),
             ("plate_clearance", self.plate_clearance >= 0, "not be negative"),
-            ("tilt_deg", 0 <= self.tilt_deg <= MAX_TILT_DEG, f"be within 0-{MAX_TILT_DEG}"),
+            ("tilt_deg", 0 <= self.tilt_deg <= max_tilt_deg, f"be within 0-{max_tilt_deg}"),
             ("split_gap", self.split_gap >= 0, "not be negative"),
         ]
         constraints += [

@@ -12,12 +12,7 @@ from typing import Literal
 
 from tsugu65.params import Params
 
-ROW_COUNT = 5
-
-# Keys at least this wide need a wire stabilizer to keep the keycap level.
-STABILIZER_MIN_WIDTH_U = 2.0
-
-type Level = Literal["full", "top", "bottom"]
+type _Level = Literal["full", "top", "bottom"]
 
 
 class Half(StrEnum):
@@ -30,7 +25,7 @@ class _Slot:
     name: str
     width_u: float = 1.0
     # Half-height keys occupy the top or bottom half of the row.
-    level: Level = "full"
+    level: _Level = "full"
     # False stacks the next slot in the same column (Mac-style arrow cluster).
     advance: bool = True
 
@@ -59,30 +54,34 @@ class PlacedKey:
     half_height: bool
 
 
-def _keys(*names: str) -> list[_Slot]:
+def _unit_slots(*names: str) -> list[_Slot]:
     return [_Slot(name) for name in names]
 
 
 # Each row is (left-half slots, right-half slots), listed left to right.
 _ROWS: tuple[tuple[list[_Slot], list[_Slot]], ...] = (
     (
-        _keys("grave", "1", "2", "3", "4", "5", "6"),
-        [*_keys("7", "8", "9", "0", "minus", "equal"), _Slot("delete", 2.0)],
+        _unit_slots("grave", "1", "2", "3", "4", "5", "6"),
+        [*_unit_slots("7", "8", "9", "0", "minus", "equal"), _Slot("delete", 2.0)],
     ),
     (
-        [_Slot("tab", 1.5), *_keys("q", "w", "e", "r", "t")],
-        [*_keys("y", "u", "i", "o", "p", "lbracket", "rbracket"), _Slot("backslash", 1.5)],
+        [_Slot("tab", 1.5), *_unit_slots("q", "w", "e", "r", "t")],
+        [*_unit_slots("y", "u", "i", "o", "p", "lbracket", "rbracket"), _Slot("backslash", 1.5)],
     ),
     (
-        [_Slot("caps", 1.75), *_keys("a", "s", "d", "f", "g")],
-        [*_keys("h", "j", "k", "l", "semicolon", "quote"), _Slot("return", 2.25)],
+        [_Slot("caps", 1.75), *_unit_slots("a", "s", "d", "f", "g")],
+        [*_unit_slots("h", "j", "k", "l", "semicolon", "quote"), _Slot("return", 2.25)],
     ),
     (
-        [_Slot("lshift", 2.25), *_keys("z", "x", "c", "v", "b")],
-        [*_keys("n", "m", "comma", "period", "slash"), _Slot("rshift", 2.75)],
+        [_Slot("lshift", 2.25), *_unit_slots("z", "x", "c", "v", "b")],
+        [*_unit_slots("n", "m", "comma", "period", "slash"), _Slot("rshift", 2.75)],
     ),
     (
-        [*_keys("globe", "lctrl", "loption"), _Slot("lcommand", 1.25), _Slot("space_l", 2.75)],
+        [
+            *_unit_slots("globe", "lctrl", "loption"),
+            _Slot("lcommand", 1.25),
+            _Slot("space_l", 2.75),
+        ],
         [
             _Slot("space_r", 2.75),
             _Slot("rcommand", 1.25),
@@ -96,11 +95,13 @@ _ROWS: tuple[tuple[list[_Slot], list[_Slot]], ...] = (
     ),
 )
 
+_ROW_COUNT = len(_ROWS)
+
 
 def _build_keys() -> tuple[Key, ...]:
     keys: list[Key] = []
     for row, (left, right) in enumerate(_ROWS):
-        row_bottom = ROW_COUNT - 1 - row
+        row_bottom = _ROW_COUNT - 1 - row
         x_u = 0.0
         for half, slots in ((Half.LEFT, left), (Half.RIGHT, right)):
             for slot in slots:
@@ -120,7 +121,9 @@ def keys_in(half: Half) -> tuple[Key, ...]:
 
 
 def stabilized_keys(half: Half) -> tuple[Key, ...]:
-    return tuple(key for key in keys_in(half) if key.width_u >= STABILIZER_MIN_WIDTH_U)
+    """Return the keys of ``half`` wide enough to need a wire stabilizer to stay level."""
+    stabilizer_min_width_u = 2.0
+    return tuple(key for key in keys_in(half) if key.width_u >= stabilizer_min_width_u)
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,7 +141,7 @@ class HalfLayout:
     def _origin_u(self) -> float:
         return min(key.x_u for key in keys_in(self.half))
 
-    def place(self) -> tuple[PlacedKey, ...]:
+    def placed_keys(self) -> tuple[PlacedKey, ...]:
         """Return keycap positions in the local frame."""
         origin_u = self._origin_u()
         pitch = self.params.key_pitch
@@ -160,9 +163,9 @@ class HalfLayout:
         origin_u = self._origin_u()
         pitch = self.params.key_pitch
         spans = []
-        for row in range(ROW_COUNT):
+        for row in range(_ROW_COUNT):
             row_keys = [key for key in keys if key.row == row]
-            y_min = (ROW_COUNT - 1 - row) * pitch
+            y_min = (_ROW_COUNT - 1 - row) * pitch
             spans.append(
                 (
                     (min(key.x_u for key in row_keys) - origin_u) * pitch,
@@ -176,4 +179,4 @@ class HalfLayout:
     def extent(self) -> tuple[float, float]:
         """Return the (width, depth) of the key area, measured on key slots."""
         width_u = max(key.x_u + key.width_u for key in keys_in(self.half)) - self._origin_u()
-        return width_u * self.params.key_pitch, ROW_COUNT * self.params.key_pitch
+        return width_u * self.params.key_pitch, _ROW_COUNT * self.params.key_pitch
