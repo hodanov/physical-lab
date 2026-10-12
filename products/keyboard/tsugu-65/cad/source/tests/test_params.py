@@ -21,6 +21,12 @@ def test_keycap_size_follows_pitch_and_gap() -> None:
     assert params.keycap_size(0.5) == pytest.approx(9.5 - 2.5)
 
 
+def test_case_outer_offset_spans_clearance_and_wall() -> None:
+    params = Params(plate_clearance=0.4, wall_thickness=2.5)
+
+    assert params.case_outer_offset == pytest.approx(2.9)
+
+
 @pytest.mark.parametrize("tilt_deg", [-0.1, 3.1])
 def test_rejects_tilt_outside_low_profile_range(tilt_deg: float) -> None:
     with pytest.raises(ValueError, match="tilt_deg"):

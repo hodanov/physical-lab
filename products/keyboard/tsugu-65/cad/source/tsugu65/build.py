@@ -28,17 +28,13 @@ from build123d import (
 
 from tsugu65 import plate
 from tsugu65.assembly import HalfModel, build_half
-from tsugu65.layout import Half, HalfLayout
+from tsugu65.layout import Half
 from tsugu65.params import Params
 
-PRODUCT = "tsugu65"
-DEFAULT_OUT_DIR = Path(__file__).resolve().parents[2] / "export"
-
-# Camera distance for SVG projections; far enough to be outside any part.
-_VIEW_DISTANCE = 1000.0
+_PRODUCT = "tsugu65"
 
 
-def _inspect(half: Half, name: str, part: Part) -> dict[str, Any]:
+def _inspect_part(half: Half, name: str, part: Part) -> dict[str, Any]:
     bbox = part.bounding_box()
     return {
         "half": half.value,
@@ -52,27 +48,33 @@ def _inspect(half: Half, name: str, part: Part) -> dict[str, Any]:
     }
 
 
-def build_report(models: Sequence[HalfModel], params: Params) -> dict[str, Any]:
-    """Return the inspection report for all generated parts."""
+def _build_report(models: Sequence[HalfModel], params: Params) -> dict[str, Any]:
     return {
-        "product": PRODUCT,
+        "product": _PRODUCT,
         "params": dataclasses.asdict(params),
         "parts": [
-            _inspect(model.half, name, part)
+            _inspect_part(model.layout.half, name, part)
             for model in models
             for name, part in (("case", model.case), ("plate", model.plate))
         ],
     }
 
 
-def _write_svg(shape: Compound, view: str, outer_side: float, path: Path) -> None:
+def _view_orientations(half: Half) -> dict[str, tuple[Vector, Vector]]:
+    outer_side = -1.0 if half is Half.LEFT else 1.0
+    return {
+        "top": (Vector(0, 0, 1), Vector(0, 1, 0)),
+        "front": (Vector(0, -1, 0), Vector(0, 0, 1)),
+        "side": (Vector(outer_side, 0, 0), Vector(0, 0, 1)),
+    }
+
+
+def _write_svg(shape: Compound, direction: Vector, up: Vector, path: Path) -> None:
+    camera_distance = 1000.0
     center = shape.bounding_box().center()
-    origin, up = {
-        "top": (center + Vector(0, 0, _VIEW_DISTANCE), (0, 1, 0)),
-        "front": (center + Vector(0, -_VIEW_DISTANCE, 0), (0, 0, 1)),
-        "side": (center + Vector(outer_side * _VIEW_DISTANCE, 0, 0), (0, 0, 1)),
-    }[view]
-    visible, hidden = shape.project_to_viewport(origin, up, look_at=center)
+    visible, hidden = shape.project_to_viewport(
+        center + direction * camera_distance, up, look_at=center
+    )
 
     exporter = ExportSVG(margin=5)
     exporter.add_layer("visible")
@@ -82,8 +84,9 @@ def _write_svg(shape: Compound, view: str, outer_side: float, path: Path) -> Non
     exporter.write(path)
 
 
-def export_half(model: HalfModel, params: Params, out_dir: Path) -> None:
-    stem = f"{PRODUCT}-{model.half.value}"
+def _export_half(model: HalfModel, out_dir: Path) -> None:
+    layout = model.layout
+    stem = f"{_PRODUCT}-{layout.half.value}"
     model.case.label = "case"
     model.plate.label = "plate"
     assembly = Compound(label=stem, children=[model.case, model.plate])
@@ -91,21 +94,21 @@ def export_half(model: HalfModel, params: Params, out_dir: Path) -> None:
     export_step(assembly, out_dir / f"{stem}.step")
     export_stl(model.case, out_dir / f"{stem}-case.stl")
     # Print the plate flat, bottom face down.
-    flat_plate = Pos(0, 0, params.plate_thickness) * plate.plate(HalfLayout(model.half, params))
+    flat_plate = Pos(0, 0, layout.params.plate_thickness) * plate.plate(layout)
     export_stl(flat_plate, out_dir / f"{stem}-plate.stl")
 
-    outer_side = -1.0 if model.half is Half.LEFT else 1.0
-    for view in ("top", "front", "side"):
-        _write_svg(assembly, view, outer_side, out_dir / f"{stem}-{view}.svg")
+    for view, (direction, up) in _view_orientations(layout.half).items():
+        _write_svg(assembly, direction, up, out_dir / f"{stem}-{view}.svg")
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    default_out_dir = Path(__file__).resolve().parents[2] / "export"
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out",
         type=Path,
-        default=DEFAULT_OUT_DIR,
-        help=f"output directory (default: {DEFAULT_OUT_DIR})",
+        default=default_out_dir,
+        help=f"output directory (default: {default_out_dir})",
     )
     args = parser.parse_args(argv)
 
@@ -114,11 +117,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     params = Params()
     models = [build_half(half, params) for half in Half]
     for model in models:
-        export_half(model, params, out_dir)
+        _export_half(model, out_dir)
 
     report_path = out_dir / "report.json"
     report_path.write_text(
-        json.dumps(build_report(models, params), indent=2) + "\n", encoding="utf-8"
+        json.dumps(_build_report(models, params), indent=2) + "\n", encoding="utf-8"
     )
     print(f"wrote exports to {out_dir}")
     return 0

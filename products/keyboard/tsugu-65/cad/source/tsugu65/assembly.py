@@ -14,9 +14,9 @@ from tsugu65.layout import Half, HalfLayout
 from tsugu65.params import Params
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
 class HalfModel:
-    half: Half
+    layout: HalfLayout
     case: Part
     plate: Part
 
@@ -30,7 +30,7 @@ def build_half(half: Half, params: Params) -> HalfModel:
         params.plate_thickness
         + params.interior_depth
         + params.floor_thickness
-        + (key_depth + 2 * (params.plate_clearance + params.wall_thickness)) * math.sin(tilt)
+        + (key_depth + 2 * params.case_outer_offset) * math.sin(tilt)
         + 10
     )
 
@@ -43,7 +43,7 @@ def build_half(half: Half, params: Params) -> HalfModel:
     to_ground = Pos(0, 0, -bottom_z)
     tilted_case = split(case_blank, Plane.XY.offset(bottom_z), keep=Keep.TOP)
     return HalfModel(
-        half=half,
+        layout=layout,
         case=to_ground * tilted_case,
         plate=to_ground * (rotate * plate.plate(layout)),
     )
