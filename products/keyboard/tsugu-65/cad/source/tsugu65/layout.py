@@ -6,7 +6,6 @@ key units (u): ``x_u`` grows to the right from the left edge of the row and ``y_
 grows toward the back from the front edge of the bottom row.
 """
 
-from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from typing import Literal
@@ -14,6 +13,9 @@ from typing import Literal
 from tsugu65.params import Params
 
 ROW_COUNT = 5
+
+# Keys at least this wide need a wire stabilizer to keep the keycap level.
+STABILIZER_MIN_WIDTH_U = 2.0
 
 type Level = Literal["full", "top", "bottom"]
 
@@ -54,6 +56,7 @@ class PlacedKey:
     center_y: float
     cap_width: float
     cap_depth: float
+    half_height: bool
 
 
 def _keys(*names: str) -> list[_Slot]:
@@ -116,33 +119,61 @@ def keys_in(half: Half) -> tuple[Key, ...]:
     return tuple(key for key in KEYS if key.half is half)
 
 
-def _origin_u(keys: Sequence[Key]) -> float:
-    return min(key.x_u for key in keys)
+def stabilized_keys(half: Half) -> tuple[Key, ...]:
+    return tuple(key for key in keys_in(half) if key.width_u >= STABILIZER_MIN_WIDTH_U)
 
 
-def place(half: Half, params: Params) -> tuple[PlacedKey, ...]:
-    """Return keycap positions in the half's local frame.
+@dataclass(frozen=True, slots=True)
+class HalfLayout:
+    """The key layout of one half, sized by ``params``.
 
-    The local origin is the front-left corner of the half's key area: the left edge
-    of its leftmost key and the front edge of the bottom row.
+    Positions are in the half's local frame, in millimeters. The local origin is the
+    front-left corner of the half's key area: the left edge of its leftmost key and the
+    front edge of the bottom row.
     """
-    keys = keys_in(half)
-    origin_u = _origin_u(keys)
-    pitch = params.key_pitch
-    return tuple(
-        PlacedKey(
-            name=key.name,
-            center_x=(key.x_u - origin_u + key.width_u / 2) * pitch,
-            center_y=(key.y_u + key.height_u / 2) * pitch,
-            cap_width=params.keycap_size(key.width_u),
-            cap_depth=params.keycap_size(key.height_u),
+
+    half: Half
+    params: Params
+
+    def _origin_u(self) -> float:
+        return min(key.x_u for key in keys_in(self.half))
+
+    def place(self) -> tuple[PlacedKey, ...]:
+        """Return keycap positions in the local frame."""
+        origin_u = self._origin_u()
+        pitch = self.params.key_pitch
+        return tuple(
+            PlacedKey(
+                name=key.name,
+                center_x=(key.x_u - origin_u + key.width_u / 2) * pitch,
+                center_y=(key.y_u + key.height_u / 2) * pitch,
+                cap_width=self.params.keycap_size(key.width_u),
+                cap_depth=self.params.keycap_size(key.height_u),
+                half_height=key.height_u < 1,
+            )
+            for key in keys_in(self.half)
         )
-        for key in keys
-    )
 
+    def row_spans(self) -> tuple[tuple[float, float, float, float], ...]:
+        """Return each row's key area as (x_min, y_min, x_max, y_max) in the local frame."""
+        keys = keys_in(self.half)
+        origin_u = self._origin_u()
+        pitch = self.params.key_pitch
+        spans = []
+        for row in range(ROW_COUNT):
+            row_keys = [key for key in keys if key.row == row]
+            y_min = (ROW_COUNT - 1 - row) * pitch
+            spans.append(
+                (
+                    (min(key.x_u for key in row_keys) - origin_u) * pitch,
+                    y_min,
+                    (max(key.x_u + key.width_u for key in row_keys) - origin_u) * pitch,
+                    y_min + pitch,
+                )
+            )
+        return tuple(spans)
 
-def extent(half: Half, params: Params) -> tuple[float, float]:
-    """Return the (width, depth) of the half's key area, measured on key slots."""
-    keys = keys_in(half)
-    width_u = max(key.x_u + key.width_u for key in keys) - _origin_u(keys)
-    return width_u * params.key_pitch, ROW_COUNT * params.key_pitch
+    def extent(self) -> tuple[float, float]:
+        """Return the (width, depth) of the key area, measured on key slots."""
+        width_u = max(key.x_u + key.width_u for key in keys_in(self.half)) - self._origin_u()
+        return width_u * self.params.key_pitch, ROW_COUNT * self.params.key_pitch

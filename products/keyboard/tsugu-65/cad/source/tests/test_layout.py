@@ -4,7 +4,14 @@ import itertools
 
 import pytest
 
-from tsugu65.layout import KEYS, Half, Key, extent, keys_in, place
+from tsugu65.layout import (
+    KEYS,
+    Half,
+    HalfLayout,
+    Key,
+    keys_in,
+    stabilized_keys,
+)
 from tsugu65.params import Params
 
 
@@ -76,19 +83,19 @@ def test_key_slots_do_not_overlap() -> None:
 def test_place_uses_local_origin_per_half() -> None:
     params = Params(key_pitch=19.0, keycap_gap=2.0)
 
-    q = next(p for p in place(Half.LEFT, params) if p.name == "q")
+    q = next(p for p in HalfLayout(Half.LEFT, params).place() if p.name == "q")
     assert (q.center_x, q.center_y) == pytest.approx((2.0 * 19.0, 3.5 * 19.0))
     assert (q.cap_width, q.cap_depth) == pytest.approx((17.0, 17.0))
 
     # The right half's origin is the left edge of its widest-reaching row (Y at 6.5u).
-    y = next(p for p in place(Half.RIGHT, params) if p.name == "y")
+    y = next(p for p in HalfLayout(Half.RIGHT, params).place() if p.name == "y")
     assert (y.center_x, y.center_y) == pytest.approx((0.5 * 19.0, 3.5 * 19.0))
 
 
 def test_place_half_height_keys() -> None:
     params = Params(key_pitch=19.0, keycap_gap=2.0)
 
-    up = next(p for p in place(Half.RIGHT, params) if p.name == "up")
+    up = next(p for p in HalfLayout(Half.RIGHT, params).place() if p.name == "up")
     assert up.center_y == pytest.approx(0.75 * 19.0)
     assert (up.cap_width, up.cap_depth) == pytest.approx((17.0, 7.5))
 
@@ -96,7 +103,7 @@ def test_place_half_height_keys() -> None:
 def test_placed_keycaps_do_not_overlap() -> None:
     params = Params()
     for half in Half:
-        for a, b in itertools.combinations(place(half, params), 2):
+        for a, b in itertools.combinations(HalfLayout(half, params).place(), 2):
             dx = abs(a.center_x - b.center_x) - (a.cap_width + b.cap_width) / 2
             dy = abs(a.center_y - b.center_y) - (a.cap_depth + b.cap_depth) / 2
             assert dx > 0 or dy > 0, (a.name, b.name)
@@ -105,5 +112,32 @@ def test_placed_keycaps_do_not_overlap() -> None:
 def test_extent_of_each_half() -> None:
     params = Params(key_pitch=19.0)
 
-    assert extent(Half.LEFT, params) == pytest.approx((7.25 * 19.0, 5 * 19.0))
-    assert extent(Half.RIGHT, params) == pytest.approx((8.5 * 19.0, 5 * 19.0))
+    assert HalfLayout(Half.LEFT, params).extent() == pytest.approx((7.25 * 19.0, 5 * 19.0))
+    assert HalfLayout(Half.RIGHT, params).extent() == pytest.approx((8.5 * 19.0, 5 * 19.0))
+
+
+def test_place_marks_half_height_keys() -> None:
+    placed = {p.name: p for p in HalfLayout(Half.RIGHT, Params()).place()}
+
+    assert all(placed[name].half_height for name in ("left", "up", "down", "fn", "right"))
+    assert not placed["roption"].half_height
+
+
+def test_row_spans_follow_row_stagger() -> None:
+    pitch = 19.0
+    spans = HalfLayout(Half.LEFT, Params(key_pitch=pitch)).row_spans()
+
+    # Number row (back) spans 7u; the shift row (second from front) spans 7.25u.
+    assert spans[0] == pytest.approx((0, 4 * pitch, 7 * pitch, 5 * pitch))
+    assert spans[3] == pytest.approx((0, pitch, 7.25 * pitch, 2 * pitch))
+    # The right half's rows start at their stagger offset from the local origin.
+    assert HalfLayout(Half.RIGHT, Params(key_pitch=pitch)).row_spans()[0][0] == pytest.approx(
+        0.5 * pitch
+    )
+
+
+def test_keys_of_2u_or_wider_need_stabilizers() -> None:
+    names = {half: {key.name for key in stabilized_keys(half)} for half in Half}
+
+    assert names[Half.LEFT] == {"lshift", "space_l"}
+    assert names[Half.RIGHT] == {"delete", "return", "rshift", "space_r"}
