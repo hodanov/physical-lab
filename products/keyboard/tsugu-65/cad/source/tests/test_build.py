@@ -21,7 +21,7 @@ def test_build_writes_exports_and_report(tmp_path: Path) -> None:
             assert (out_dir / f"tsugu65-{half}-{part}.stl").stat().st_size > 0
         for view in ("top", "front", "side"):
             svg = (out_dir / f"tsugu65-{half}-{view}.svg").read_text(encoding="utf-8")
-            assert svg.startswith("<?xml") or svg.startswith("<svg")
+            assert svg.startswith(("<?xml", "<svg"))
 
     report = json.loads((out_dir / "report.json").read_text(encoding="utf-8"))
     assert report["product"] == "tsugu65"
