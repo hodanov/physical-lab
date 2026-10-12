@@ -6,7 +6,7 @@ import pytest
 from build123d import Axis, Face, Part, SortBy, Vector
 
 from tsugu65.assembly import HalfModel, build_half
-from tsugu65.layout import Half, extent, keys_in
+from tsugu65.layout import Half, HalfLayout, keys_in
 from tsugu65.params import Params
 
 FLAT = Params(tilt_deg=0)
@@ -49,7 +49,7 @@ def test_parts_are_valid_solids(half: Half) -> None:
 @pytest.mark.parametrize("half", list(Half))
 def test_plate_covers_key_area_with_one_opening_per_key(half: Half) -> None:
     built = model(half, FLAT)
-    width, depth = extent(half, FLAT)
+    width, depth = HalfLayout(half, FLAT).extent()
 
     size = built.plate.bounding_box().size
     assert pytest.approx((width, depth, FLAT.plate_thickness)) == (size.X, size.Y, size.Z)
@@ -88,7 +88,7 @@ def test_case_rests_on_z0_with_typing_tilt(half: Half) -> None:
 
 def test_usb_c_opening_is_on_left_side_toward_back() -> None:
     case = model(Half.LEFT, FLAT).case
-    _, depth = extent(Half.LEFT, FLAT)
+    _, depth = HalfLayout(Half.LEFT, FLAT).extent()
     x = -in_wall(FLAT)
     z = opening_z(FLAT)
 
@@ -98,7 +98,7 @@ def test_usb_c_opening_is_on_left_side_toward_back() -> None:
 
 def test_right_half_has_no_usb_c_opening() -> None:
     case = model(Half.RIGHT, FLAT).case
-    width, depth = extent(Half.RIGHT, FLAT)
+    width, depth = HalfLayout(Half.RIGHT, FLAT).extent()
 
     assert case.is_inside(
         (width + in_wall(FLAT), depth - FLAT.usb_c_offset_from_back, opening_z(FLAT))
@@ -113,7 +113,7 @@ def test_link_opening_is_on_back_wall_near_inner_side(
     half: Half, number_row_inner_end: float, direction: int
 ) -> None:
     case = model(half, FLAT).case
-    _, depth = extent(half, FLAT)
+    _, depth = HalfLayout(half, FLAT).extent()
     x = number_row_inner_end * FLAT.key_pitch + direction * FLAT.link_opening_inset
     y = depth + in_wall(FLAT)
     z = opening_z(FLAT)

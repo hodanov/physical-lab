@@ -6,29 +6,29 @@ top at ``z = 0``.
 
 from build123d import Align, Part, Pos, Rectangle, Sketch, extrude
 
-from tsugu65.layout import Half, place, row_spans
-from tsugu65.params import Params
+from tsugu65.layout import HalfLayout
 
 _MIN_CORNER = (Align.MIN, Align.MIN)
 
 
-def outline(half: Half, params: Params) -> Sketch:
+def outline(layout: HalfLayout) -> Sketch:
     """Return the stepped key-area outline of the half."""
     sketch = Sketch()
-    for x_min, y_min, x_max, y_max in row_spans(half, params):
+    for x_min, y_min, x_max, y_max in layout.row_spans():
         sketch += Pos(x_min, y_min) * Rectangle(x_max - x_min, y_max - y_min, align=_MIN_CORNER)
     return sketch.clean()
 
 
-def openings(half: Half, params: Params) -> Sketch:
+def openings(layout: HalfLayout) -> Sketch:
     """Return one scissor opening centered under each keycap.
 
     TODO(donor): keys from ``stabilized_keys`` also need wire-stabilizer retention
     features. Add them once the donor's stabilizers are measured; until then these
     keys get only the 1u center opening.
     """
+    params = layout.params
     sketch = Sketch()
-    for key in place(half, params):
+    for key in layout.place():
         depth = (
             params.half_height_opening_depth if key.half_height else params.scissor_opening_depth
         )
@@ -36,5 +36,5 @@ def openings(half: Half, params: Params) -> Sketch:
     return sketch
 
 
-def plate(half: Half, params: Params) -> Part:
-    return extrude(outline(half, params) - openings(half, params), -params.plate_thickness)
+def plate(layout: HalfLayout) -> Part:
+    return extrude(outline(layout) - openings(layout), -layout.params.plate_thickness)

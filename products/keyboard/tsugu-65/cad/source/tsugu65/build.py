@@ -28,7 +28,7 @@ from build123d import (
 
 from tsugu65 import plate
 from tsugu65.assembly import HalfModel, build_half
-from tsugu65.layout import Half
+from tsugu65.layout import Half, HalfLayout
 from tsugu65.params import Params
 
 PRODUCT = "tsugu65"
@@ -91,7 +91,7 @@ def export_half(model: HalfModel, params: Params, out_dir: Path) -> None:
     export_step(assembly, out_dir / f"{stem}.step")
     export_stl(model.case, out_dir / f"{stem}-case.stl")
     # Print the plate flat, bottom face down.
-    flat_plate = Pos(0, 0, params.plate_thickness) * plate.plate(model.half, params)
+    flat_plate = Pos(0, 0, params.plate_thickness) * plate.plate(HalfLayout(model.half, params))
     export_stl(flat_plate, out_dir / f"{stem}-plate.stl")
 
     outer_side = -1.0 if model.half is Half.LEFT else 1.0

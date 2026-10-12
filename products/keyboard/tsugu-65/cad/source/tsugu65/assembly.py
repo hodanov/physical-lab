@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from build123d import Keep, Part, Plane, Pos, Rot, split
 
 from tsugu65 import case, plate
-from tsugu65.layout import Half, extent
+from tsugu65.layout import Half, HalfLayout
 from tsugu65.params import Params
 
 
@@ -22,8 +22,9 @@ class HalfModel:
 
 
 def build_half(half: Half, params: Params) -> HalfModel:
+    layout = HalfLayout(half, params)
     tilt = math.radians(params.tilt_deg)
-    _, key_depth = extent(half, params)
+    _, key_depth = layout.extent()
     # Deep enough to reach below the tilted floor everywhere.
     blank_depth = (
         params.plate_thickness
@@ -34,8 +35,8 @@ def build_half(half: Half, params: Params) -> HalfModel:
     )
 
     rotate = Rot(X=params.tilt_deg)
-    case_blank = rotate * case.case_blank(half, params, blank_depth)
-    cavity = rotate * case.cavity(half, params)
+    case_blank = rotate * case.case_blank(layout, blank_depth)
+    cavity = rotate * case.cavity(layout)
     # The floor is thinnest under the lowest point of the cavity.
     bottom_z = cavity.bounding_box().min.Z - params.floor_thickness / math.cos(tilt)
 
@@ -44,5 +45,5 @@ def build_half(half: Half, params: Params) -> HalfModel:
     return HalfModel(
         half=half,
         case=to_ground * tilted_case,
-        plate=to_ground * (rotate * plate.plate(half, params)),
+        plate=to_ground * (rotate * plate.plate(layout)),
     )
