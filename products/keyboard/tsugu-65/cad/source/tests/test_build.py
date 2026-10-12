@@ -32,3 +32,9 @@ def test_build_writes_exports_and_report(tmp_path: Path) -> None:
         assert part["volume_mm3"] > 0
         assert len(part["bbox_mm"]["min"]) == len(part["bbox_mm"]["max"]) == 3
     assert report["params"]["tilt_deg"] == 2.0
+
+    for half in HALVES:
+        spec = json.loads((out_dir / f"tsugu65-{half}-drawing.json").read_text(encoding="utf-8"))
+        assert (out_dir / spec["step"]).is_file()
+        assert spec["dimensions"]
+        assert all(dim["expected_mm"] > 0 for dim in spec["dimensions"])

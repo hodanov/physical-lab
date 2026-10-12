@@ -28,6 +28,9 @@ Each product should keep:
   under `cad/source/` are the source of truth (see `docs/adr/0003-*`).
 - Use FreeCAD downstream for dimensioned drawings (TechDraw), assembly checks,
   and analysis. It imports the generated STEP files.
+- Generate TechDraw drawings with scripts under each product's `drawings/`;
+  commit only PDFs exported at milestones, not `.FCStd` files (see
+  `docs/adr/0004-*`). FreeCAD scripts run on FreeCAD's bundled Python 3.11.
 - STEP is the primary neutral CAD exchange format.
 - STL is a manufacturing/3D-print export format.
 - Generated exports under `cad/export/` are not committed; CI publishes them as
