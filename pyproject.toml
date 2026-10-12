@@ -40,7 +40,23 @@ target-version = "py314"
 line-length = 100
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "N"]
+select = [
+  "E", "F", "W", "I", "B", "UP", "SIM", "RUF", "N",
+  "S",     # flake8-bandit: security
+  "PTH",   # prefer pathlib over os.path
+  "PL",    # pylint
+  "PERF",  # performance anti-patterns
+  "C4",    # comprehensions
+  "RET",   # return statements
+  "PT",    # pytest style
+  "ARG",   # unused arguments
+  "ERA",   # commented-out code
+  "PIE", "FURB", "A", "LOG",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# pytest relies on assert, and tests compare against literal expected values.
+"**/tests/**" = ["S101", "PLR2004"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["tsugu65"]
