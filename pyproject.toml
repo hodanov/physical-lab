@@ -67,9 +67,3 @@ select = [
 
 [tool.ruff.lint.isort]
 known-first-party = ["tsugu65"]
-
-[tool.uv]
-# threejs-materials (via build123d) pins pillow<12.3.0, which blocks security
-# fixes. Remove once https://github.com/bernhard-42/threejs-materials/issues/1
-# is released.
-override-dependencies = ["pillow>=12.3.0,<13"]
