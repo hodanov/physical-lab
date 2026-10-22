@@ -10,8 +10,9 @@ MacBook Airとの行き来で迷わない配列と打鍵感を目指す、薄型
 シザー固定プレート、左右の簡易筐体（USB-Cと左右間ケーブルの開口はプレース
 ホルダ）を作成済み。シザー開口などの寸法はドナー実測前の仮値。2u以上のキー
 （shift、space、return、delete）のスタビライザー固定部は、ドナー実測後に追加する
-（現状は中央の開口のみ）。PCB、電池、アンテナの配置、図面、電子回路、
-ファームウェア、製造物は未作成。
+（現状は中央の開口のみ）。FreeCADの寸法入り図面はスクリプトで生成できる
+（`drawings/`）。PCB、電池、アンテナの配置、電子回路、ファームウェア、製造物は
+未作成。
 
 ## 確定仕様
 
@@ -59,8 +60,9 @@ globe ctrl option command space-L | space-R command option left down up fn right
 ## ディレクトリ構成
 
 - `cad/source/`: code-CAD source of truth (`tsugu65/`) and tests (`tests/`)
-- `cad/export/`: generated STEP, STL, SVG, and inspection report (not committed)
-- `drawings/`: FreeCAD TechDraw sources and dimensioned drawings
+- `cad/export/`: generated STEP, STL, SVG, drawing specifications and FreeCAD
+  drawings, and inspection report (not committed)
+- `drawings/`: TechDraw drawing script and milestone PDFs
 - `pcb/`: PCB design files
 - `firmware/`: keyboard firmware
 - `bom/`: bill of materials
@@ -75,14 +77,17 @@ globe ctrl option command space-L | space-R command option left down up fn right
 ```sh
 uv sync                 # 依存をインストール
 uv run tsugu65-build    # cad/export/ に生成物を出力
+uv run tsugu65-drawings # cad/export/ にFreeCADの図面を生成（要FreeCAD）
 uv run pytest           # テスト
 ```
 
 生成物は左右それぞれについて、組み立て位置のSTEP（筐体＋プレート）、部品ごとの
-STL、上面・正面・外側面の投影SVG、パラメータと検査結果の `report.json`。
+STL、上面・正面・外側面の投影SVG、図面仕様（`-drawing.json`）、パラメータと
+検査結果の `report.json`。
 形状はFreeCADでSTEPを開いて確認する
 （例: `open -a FreeCAD cad/export/tsugu65-left.step`）。
 
-FreeCADの図面は、生成したSTEPを取り込んでレビューや発注の節目で更新する。
+FreeCADの寸法入り図面は、STEPと図面仕様からスクリプトで生成する。節目には
+PDFを書き出して `drawings/` にコミットする（手順は [drawings/README.md](drawings/README.md)）。
 発注時は使用した生成物を `manufacturing/<service>/<rev>/` にコピーしてコミットする。
 発注前には、選択した材料と製造サービスの最新ガイドラインに照らして出力を検証する。
