@@ -5,6 +5,7 @@ Exports are written to ``cad/export/`` by default and must not be edited by hand
 - ``tsugu65-<half>.step``: case and plate in assembled position (world frame)
 - ``tsugu65-<half>-<part>.stl``: each part for 3D printing
 - ``tsugu65-<half>-<view>.svg``: top, front, and outer-side projections for review
+- ``tsugu65-<half>-drawing.json``: drawing specification for ``tsugu65-drawings``
 - ``report.json``: parameters and inspection results
 """
 
@@ -21,13 +22,13 @@ from build123d import (
     LineType,
     Part,
     Pos,
-    Vector,
     export_step,
     export_stl,
 )
 
 from tsugu65 import plate
 from tsugu65.assembly import HalfModel, build_half
+from tsugu65.drawing import ViewOrientation, drawing_spec, view_orientations
 from tsugu65.layout import Half
 from tsugu65.params import Params
 
@@ -60,20 +61,11 @@ def _build_report(models: Sequence[HalfModel], params: Params) -> dict[str, Any]
     }
 
 
-def _view_orientations(half: Half) -> dict[str, tuple[Vector, Vector]]:
-    outer_side = -1.0 if half is Half.LEFT else 1.0
-    return {
-        "top": (Vector(0, 0, 1), Vector(0, 1, 0)),
-        "front": (Vector(0, -1, 0), Vector(0, 0, 1)),
-        "side": (Vector(outer_side, 0, 0), Vector(0, 0, 1)),
-    }
-
-
-def _write_svg(shape: Compound, direction: Vector, up: Vector, path: Path) -> None:
+def _write_svg(shape: Compound, orientation: ViewOrientation, path: Path) -> None:
     camera_distance = 1000.0
     center = shape.bounding_box().center()
     visible, hidden = shape.project_to_viewport(
-        center + direction * camera_distance, up, look_at=center
+        center + orientation.direction * camera_distance, orientation.up, look_at=center
     )
 
     exporter = ExportSVG(margin=5)
@@ -97,12 +89,22 @@ def _export_half(model: HalfModel, out_dir: Path) -> None:
     flat_plate = Pos(0, 0, layout.params.plate_thickness) * plate.plate(layout)
     export_stl(flat_plate, out_dir / f"{stem}-plate.stl")
 
-    for view, (direction, up) in _view_orientations(layout.half).items():
-        _write_svg(assembly, direction, up, out_dir / f"{stem}-{view}.svg")
+    for view, orientation in view_orientations(layout.half).items():
+        _write_svg(assembly, orientation, out_dir / f"{stem}-{view}.svg")
+
+    spec = drawing_spec(model, stem)
+    (out_dir / f"{stem}-drawing.json").write_text(
+        json.dumps(spec, indent=2) + "\n", encoding="utf-8"
+    )
+
+
+def default_export_dir() -> Path:
+    """Return the product's ``cad/export/`` directory."""
+    return Path(__file__).resolve().parents[2] / "export"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    default_out_dir = Path(__file__).resolve().parents[2] / "export"
+    default_out_dir = default_export_dir()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--out",
