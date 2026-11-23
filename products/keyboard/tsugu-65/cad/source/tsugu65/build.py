@@ -4,7 +4,7 @@ Exports are written to ``cad/export/`` by default and must not be edited by hand
 
 - ``tsugu65-<half>.step``: case and plate in assembled position (world frame)
 - ``tsugu65-<half>-<part>.stl``: each part for 3D printing
-- ``tsugu65-<half>-<view>.svg``: top, front, and outer-side projections for review
+- ``tsugu65-<half>-<view>.svg``: top, front, outer-side, and back projections for review
 - ``tsugu65-<half>-drawing.json``: drawing specification for ``tsugu65-drawings``
 - ``report.json``: parameters and inspection results
 """

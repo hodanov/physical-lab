@@ -19,7 +19,7 @@ def test_build_writes_exports_and_report(tmp_path: Path) -> None:
         assert import_step(out_dir / f"tsugu65-{half}.step").volume > 0
         for part in ("case", "plate"):
             assert (out_dir / f"tsugu65-{half}-{part}.stl").stat().st_size > 0
-        for view in ("top", "front", "side"):
+        for view in ("top", "front", "side", "back"):
             svg = (out_dir / f"tsugu65-{half}-{view}.svg").read_text(encoding="utf-8")
             assert svg.startswith(("<?xml", "<svg"))
 

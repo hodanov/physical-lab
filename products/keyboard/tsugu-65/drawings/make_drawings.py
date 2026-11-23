@@ -86,7 +86,13 @@ class _PlacedView:
 
 
 def _projection_name(direction: Sequence[float]) -> str:
-    names = {(0, -1, 0): "Front", (0, 0, 1): "Top", (-1, 0, 0): "Left", (1, 0, 0): "Right"}
+    names = {
+        (0, -1, 0): "Front",
+        (0, 0, 1): "Top",
+        (-1, 0, 0): "Left",
+        (1, 0, 0): "Right",
+        (0, 1, 0): "Rear",
+    }
     key = tuple(round(component) for component in direction)
     if key not in names:
         raise RuntimeError(f"no third-angle projection looks along {tuple(direction)}")
@@ -119,6 +125,7 @@ def _add_page(doc: Any, spec: dict[str, Any]) -> Any:
 
 def _add_views(doc: Any, page: Any, source: Any, spec: dict[str, Any]) -> dict[str, _PlacedView]:
     views = {view["name"]: view for view in spec["views"]}
+    spacing = 30.0
     group = doc.addObject("TechDraw::DrawProjGroup", "Views")
     page.addView(group)
     group.Source = [source]
@@ -126,15 +133,23 @@ def _add_views(doc: Any, page: Any, source: Any, spec: dict[str, Any]) -> dict[s
     group.ScaleType = "Custom"
     group.Scale = 1.0
     group.AutoDistribute = True
-    group.spacingX = 30
-    group.spacingY = 30
+    group.spacingX = spacing
+    group.spacingY = spacing
     group.addProjection("Front")
     group.Anchor.Direction = App.Vector(*views["front"]["direction"])
     group.Anchor.XDirection = App.Vector(*views["front"]["x_direction"])
     items = {"front": group.Anchor}
+    below_front = []
     for name, view in views.items():
-        if name != "front":
-            items[name] = group.addProjection(_projection_name(view["direction"]))
+        if name == "front":
+            continue
+        projection = _projection_name(view["direction"])
+        # The third-angle rear position does not fit on A3 at 1:1; move it below the front.
+        if projection == "Rear":
+            items[name] = _add_moved_view(doc, page, source, view, projection)
+            below_front.append(name)
+        else:
+            items[name] = group.addProjection(projection)
     doc.recompute()
 
     for name, item in items.items():
@@ -148,11 +163,32 @@ def _add_views(doc: Any, page: Any, source: Any, spec: dict[str, Any]) -> dict[s
                 f"expected {view['direction']}, {view['x_direction']}"
             )
     placed = {name: _PlacedView.of(item, source) for name, item in items.items()}
-    _center_on_page(group, page, placed)
+    front = placed["front"]
+    top = front.item.Y.Value + front.bounds.y_min - spacing
+    for name in below_front:
+        moved = placed[name]
+        moved.item.X = front.item.X.Value
+        moved.item.Y = top - moved.bounds.y_max
+        top = moved.item.Y.Value + moved.bounds.y_min - spacing
+    _center_on_page(group, page, placed, below_front)
     return placed
 
 
-def _center_on_page(group: Any, page: Any, placed: dict[str, _PlacedView]) -> None:
+def _add_moved_view(doc: Any, page: Any, source: Any, view: dict[str, Any], projection: str) -> Any:
+    item = doc.addObject("TechDraw::DrawViewPart", projection)
+    page.addView(item)
+    item.Source = [source]
+    item.Direction = App.Vector(*view["direction"])
+    item.XDirection = App.Vector(*view["x_direction"])
+    item.ScaleType = "Custom"
+    item.Scale = 1.0
+    item.Caption = f"{projection} view"
+    return item
+
+
+def _center_on_page(
+    group: Any, page: Any, placed: dict[str, _PlacedView], outside_group: Sequence[str]
+) -> None:
     title_block_height = 60.0
     margin = 15.0
     corners = []
@@ -166,13 +202,19 @@ def _center_on_page(group: Any, page: Any, placed: dict[str, _PlacedView]) -> No
     width = page.Template.Width.Value
     height = page.Template.Height.Value
     block_x, block_y = block.center
-    group.X = width / 2 - block_x
-    group.Y = (title_block_height + height - margin) / 2 - block_y
+    shift_x = width / 2 - block_x
+    shift_y = (title_block_height + height - margin) / 2 - block_y
+    group.X = shift_x
+    group.Y = shift_y
+    for name in outside_group:
+        item = placed[name].item
+        item.X = item.X.Value + shift_x
+        item.Y = item.Y.Value + shift_y
     if (
-        group.X.Value + block.x_min < margin
-        or group.X.Value + block.x_max > width - margin
-        or group.Y.Value + block.y_min < title_block_height
-        or group.Y.Value + block.y_max > height - margin
+        shift_x + block.x_min < margin
+        or shift_x + block.x_max > width - margin
+        or shift_y + block.y_min < title_block_height
+        or shift_y + block.y_max > height - margin
     ):
         raise RuntimeError("views do not fit on the A3 page at 1:1")
 

@@ -41,12 +41,13 @@ def test_view_x_direction_is_up_cross_direction(half: Half) -> None:
 
 
 @pytest.mark.parametrize(("half", "outward_x"), [(Half.LEFT, -1), (Half.RIGHT, 1)])
-def test_side_view_looks_at_outer_side(half: Half, outward_x: float) -> None:
+def test_views_look_along_axes_with_side_at_outer_side(half: Half, outward_x: float) -> None:
     orientations = view_orientations(half)
 
     assert outward_x == orientations[View.SIDE].direction.X
     assert tuple(orientations[View.TOP].direction) == (0, 0, 1)
     assert tuple(orientations[View.FRONT].direction) == (0, -1, 0)
+    assert tuple(orientations[View.BACK].direction) == (0, 1, 0)
 
 
 @pytest.mark.parametrize("half", list(Half))
@@ -105,6 +106,31 @@ def test_usb_c_position_on_flat_case() -> None:
         key_depth + params.case_outer_offset - opening_back_y
     )
     assert measured(Half.LEFT, params, "usb_c_from_bottom") == pytest.approx(opening_bottom_z)
+
+
+@pytest.mark.parametrize("half", list(Half))
+def test_link_opening_is_dimensioned_on_back_view(half: Half) -> None:
+    params = FLAT
+    link = {name: dim for name, dim in by_name(half, params).items() if name.startswith("link_")}
+
+    assert set(link) == {"link_width", "link_height", "link_from_inner_end", "link_from_bottom"}
+    assert all(dim.view is View.BACK for dim in link.values())
+    assert measured(half, params, "link_width") == pytest.approx(params.link_opening_width)
+    assert measured(half, params, "link_height") == pytest.approx(params.link_opening_height)
+
+
+@pytest.mark.parametrize("half", list(Half))
+def test_link_position_on_flat_case(half: Half) -> None:
+    params = FLAT
+    rim_z = params.floor_thickness + params.interior_depth + params.plate_thickness
+    opening_bottom_z = (
+        rim_z - params.plate_thickness - params.interior_depth / 2 - params.link_opening_height / 2
+    )
+
+    assert measured(half, params, "link_from_inner_end") == pytest.approx(
+        params.link_opening_inset - params.link_opening_width / 2
+    )
+    assert measured(half, params, "link_from_bottom") == pytest.approx(opening_bottom_z)
 
 
 @pytest.mark.parametrize("half", list(Half))

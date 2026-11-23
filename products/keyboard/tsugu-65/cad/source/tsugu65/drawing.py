@@ -23,6 +23,7 @@ class View(StrEnum):
     TOP = "top"
     FRONT = "front"
     SIDE = "side"
+    BACK = "back"
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +46,7 @@ def view_orientations(half: Half) -> dict[View, ViewOrientation]:
         View.TOP: ViewOrientation(Vector(0, 0, 1), Vector(0, 1, 0)),
         View.FRONT: ViewOrientation(Vector(0, -1, 0), Vector(0, 0, 1)),
         View.SIDE: ViewOrientation(Vector(outer_side, 0, 0), Vector(0, 0, 1)),
+        View.BACK: ViewOrientation(Vector(0, 1, 0), Vector(0, 0, 1)),
     }
 
 
@@ -135,6 +137,36 @@ def _usb_c_dimensions(model: HalfModel, case_back_bottom: Vector) -> list[Dimens
     ]
 
 
+def _inward_extent(model: HalfModel, point: Vector) -> float:
+    inward = 1.0 if model.layout.half is Half.LEFT else -1.0
+    return inward * _to_keyboard(model, point).X
+
+
+def _link_dimensions(model: HalfModel) -> list[Dimension]:
+    back_face = model.case.faces().sort_by(Axis.Y)[-1]
+    (opening,) = back_face.inner_wires()
+    wall_inner_bottom = max(
+        _on_ground(_points(back_face.outer_wire())), key=lambda p: _inward_extent(model, p)
+    )
+    by_height = sorted(_points(opening), key=lambda p: _to_keyboard(model, p).Z)
+    outer_bottom, inner_bottom = sorted(by_height[:2], key=lambda p: _inward_extent(model, p))
+    inner_top = max(by_height[2:], key=lambda p: _inward_extent(model, p))
+    return [
+        Dimension("link_width", View.BACK, DimensionKind.HORIZONTAL, outer_bottom, inner_bottom),
+        Dimension("link_height", View.BACK, DimensionKind.VERTICAL, inner_bottom, inner_top),
+        Dimension(
+            "link_from_inner_end",
+            View.BACK,
+            DimensionKind.HORIZONTAL,
+            inner_bottom,
+            wall_inner_bottom,
+        ),
+        Dimension(
+            "link_from_bottom", View.BACK, DimensionKind.VERTICAL, wall_inner_bottom, inner_bottom
+        ),
+    ]
+
+
 def _on_ground(points: Sequence[Vector]) -> list[Vector]:
     tolerance = 1e-6
     return [point for point in points if abs(point.Z) < tolerance]
@@ -171,6 +203,7 @@ def dimensions(model: HalfModel) -> tuple[Dimension, ...]:
     ]
     if model.layout.half is Half.LEFT:
         result += _usb_c_dimensions(model, back_bottom)
+    result += _link_dimensions(model)
     return tuple(result)
 
 

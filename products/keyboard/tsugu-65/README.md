@@ -82,7 +82,7 @@ uv run pytest           # テスト
 ```
 
 生成物は左右それぞれについて、組み立て位置のSTEP（筐体＋プレート）、部品ごとの
-STL、上面・正面・外側面の投影SVG、図面仕様（`-drawing.json`）、パラメータと
+STL、上面・正面・外側面・背面の投影SVG、図面仕様（`-drawing.json`）、パラメータと
 検査結果の `report.json`。
 形状はFreeCADでSTEPを開いて確認する
 （例: `open -a FreeCAD cad/export/tsugu65-left.step`）。
