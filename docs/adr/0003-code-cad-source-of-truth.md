@@ -54,6 +54,7 @@ CI で動かすには AppImage などの重いセットアップが要る。
 ## 関連資料
 
 - [ADR-0002: CAD 正本と製造用エクスポート](0002-cad-source-and-manufacturing-exports.md)
+- [ADR-0004: TechDraw の図面をスクリプトで生成する](0004-scripted-techdraw-drawings.md)（図面の扱いを置き換え）
 - [リポジトリルール](../../AGENTS.md)
 - [TSUGU Split 65 の設計制約](../../products/keyboard/tsugu-65/AGENTS.md)
 - [build123d](https://github.com/gumyr/build123d)

@@ -9,6 +9,7 @@ dependencies = [
 
 [project.scripts]
 tsugu65-build = "tsugu65.build:main"
+tsugu65-drawings = "tsugu65.techdraw:main"
 
 [dependency-groups]
 dev = [
@@ -31,6 +32,10 @@ files = ["products"]
 explicit_package_bases = true
 mypy_path = "products/keyboard/tsugu-65/cad/source"
 
+[[tool.mypy.overrides]]
+module = ["FreeCAD", "Import"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 addopts = ["--import-mode=importlib"]
 testpaths = ["products/keyboard/tsugu-65/cad/source/tests"]
@@ -38,6 +43,8 @@ testpaths = ["products/keyboard/tsugu-65/cad/source/tests"]
 [tool.ruff]
 target-version = "py314"
 line-length = 100
+# FreeCAD runs drawing scripts with its bundled Python 3.11.
+per-file-target-version = { "products/*/*/drawings/*.py" = "py311" }
 
 [tool.ruff.lint]
 select = [
