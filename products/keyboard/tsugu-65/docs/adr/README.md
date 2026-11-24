@@ -8,3 +8,4 @@
 ## ADR一覧
 
 - [ADR-0001: Mac指向の分割メンブレン・シザー構成](0001-mac-oriented-split-membrane-scissor.md)
+- [ADR-0002: 左右間接続に USB-C を使う](0002-usb-c-inter-half-link.md)

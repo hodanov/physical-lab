@@ -39,6 +39,9 @@ low-profile split keyboard.
   the main unit and owns USB-C, Bluetooth, battery, antenna, and host switching
 - Place the USB-C host port on the outer (left) side face of the left half,
   toward the back edge
+- Use a USB-C receptacle on the back wall of each half for the inter-half
+  link; the link ports never act as host ports and must tolerate a host or
+  charger being plugged in by mistake (see `docs/adr/0002-*`)
 - Keep the default typing angle between 0 and 3 degrees; do not make tenting a
   first-prototype requirement
 - Use a non-metal enclosure by default to preserve Bluetooth performance
